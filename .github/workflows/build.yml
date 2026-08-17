@@ -53,17 +53,17 @@ jobs:
       if: matrix.os == 'windows-latest'
       shell: msys2 {0}
       run: |
-        x86_64-w64-mingw32-g++ main.cpp -o build/${{ matrix.output_name }} -O3 -liphlpapi -lws2_32
+        x86_64-w64-mingw32-g++ src/main.cpp -o build/${{ matrix.output_name }} -O3 -liphlpapi -lws2_32
 
     - name: Compile Source (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
-        g++ main.cpp -o build/${{ matrix.output_name }} -O3
+        g++ src/main.cpp -o build/${{ matrix.output_name }} -O3
 
     - name: Compile Source (macOS)
       if: matrix.os == 'macos-latest'
       run: |
-        clang++ main.cpp -o build/${{ matrix.output_name }} -O3 -arch x86_64 -arch arm64
+        clang++ src/main.cpp -o build/${{ matrix.output_name }} -O3 -arch x86_64 -arch arm64
       
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
