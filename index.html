@@ -1,1 +1,261 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <!-- Responsive Meta Tag -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    
+    <!-- SEO Meta Tags -->
+    <title>XOSINFO - Forensic System State Capture</title>
+    <meta name="description" content="XOSINFO - Cross-Platform System Information CLI for Judicial, Legal, and Forensic System State Capture. Available for Windows, Linux, and macOS.">
+    <meta name="keywords" content="XOSINFO, Forensics, CLI, System Info, Ratio Juris, Isrg Rajan, Law, Open Source, C++, Windows, Linux, macOS">
+    <meta name="author" content="Isrg Rajan">
+    <meta name="copyright" content="Ratio Juris © 2026">
+    <meta name="robots" content="index, follow">
 
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ratiojuris.github.io/XOSINFO/">
+    <meta property="og:title" content="XOSINFO - Forensic System State Capture">
+    <meta property="og:description" content="Cross-Platform System Information CLI for Judicial, Legal, and Forensic System State Capture.">
+    <meta property="og:image" content="https://avatars.githubusercontent.com/u/12345678"> <!-- Optional: Add a real image URL here -->
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://ratiojuris.github.io/XOSINFO/">
+    <meta property="twitter:title" content="XOSINFO - Forensic System State Capture">
+    <meta property="twitter:description" content="Cross-Platform System Information CLI for Judicial, Legal, and Forensic System State Capture.">
+    <meta property="twitter:creator" content="@isrgrajan">
+    
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    
+    <!-- FontAwesome 6 CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- Marked.js CDN for parsing README.md -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0f172a;
+        }
+        .text-accent { color: #63b3ed !important; }
+        .card-custom {
+            background-color: #1e293b;
+            border-left: 4px solid #3182ce;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        .social-link {
+            color: #a0aec0;
+            font-size: 1.5rem;
+            transition: color 0.3s ease, transform 0.2s ease;
+        }
+        .social-link:hover {
+            color: #63b3ed;
+            transform: translateY(-3px);
+        }
+        .table-custom, .readme-container {
+            background-color: #1e293b;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        /* Markdown Styling inside the container */
+        #readme-content { color: #e2e8f0; }
+        #readme-content h1, #readme-content h2 {
+            border-bottom: 1px solid #475569;
+            padding-bottom: 0.5rem;
+            margin-top: 1.5rem;
+            color: #f8fafc;
+        }
+        #readme-content a { color: #63b3ed; text-decoration: none; }
+        #readme-content a:hover { text-decoration: underline; }
+        #readme-content pre {
+            background-color: #0f172a;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+        #readme-content code {
+            background-color: #0f172a;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            color: #fca5a5;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container py-5">
+    <!-- Header Section -->
+    <header class="text-center mb-5 border-bottom border-secondary pb-4">
+        <h1 class="display-4 fw-bold mb-2"><i class="fa-solid fa-microchip me-3"></i>XOSINFO</h1>
+        <p class="lead text-secondary">Judicial, Legal, and Forensic System State Capture</p>
+    </header>
+
+    <!-- Metadata Section -->
+    <div class="row g-4 mb-5 text-center">
+        <div class="col-md-4">
+            <div class="card card-custom h-100">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-uppercase text-secondary">Latest Version</h6>
+                    <h3 class="card-title text-accent font-monospace" id="ui-version">
+                        <i class="fa-solid fa-spinner fa-spin fs-5"></i>
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-custom h-100 border-success">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-uppercase text-secondary">Build Date (UTC)</h6>
+                    <h4 class="card-title text-accent font-monospace fs-5" id="ui-build-date">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                    </h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-custom h-100 border-danger">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-uppercase text-secondary">End of Life (EOL)</h6>
+                    <h4 class="card-title text-accent font-monospace fs-5" id="ui-eol">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                    </h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Downloads Table Section -->
+    <h3 class="mb-4"><i class="fa-solid fa-download me-2"></i>Available Binaries</h3>
+    
+    <div class="table-responsive table-custom mb-5">
+        <div id="loading-stats" class="text-center p-4 text-secondary fst-italic">
+            <i class="fa-solid fa-satellite-dish fa-beat me-2"></i>Fetching latest build data...
+        </div>
+        
+        <table class="table table-dark table-hover table-striped align-middle mb-0" id="downloads-table" style="display: none;">
+            <thead class="table-dark">
+                <tr>
+                    <th scope="col" class="text-uppercase text-secondary">OS</th>
+                    <th scope="col" class="text-uppercase text-secondary">Architecture</th>
+                    <th scope="col" class="text-uppercase text-secondary">Filename</th>
+                    <th scope="col" class="text-uppercase text-secondary text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody id="downloads-body" class="table-group-divider">
+                <!-- Rows injected via JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Rendered README Section -->
+    <h3 class="mb-4"><i class="fa-solid fa-book-open me-2"></i>Documentation</h3>
+    <div class="readme-container p-4 mb-5">
+        <div id="loading-readme" class="text-center text-secondary fst-italic">
+            <i class="fa-solid fa-spinner fa-spin me-2"></i>Loading documentation from README.md...
+        </div>
+        <!-- Markdown renders here -->
+        <div id="readme-content" style="display: none;"></div> 
+    </div>
+
+    <!-- Footer & Socials -->
+    <footer class="text-center pt-4 border-top border-secondary">
+        <div class="mb-4 d-flex justify-content-center gap-4">
+            <!-- GitHub Org -->
+            <a href="https://github.com/RatioJuris/" target="_blank" class="social-link" title="Ratio Juris GitHub">
+                <i class="fa-brands fa-github"></i>
+            </a>
+            <!-- Personal Socials -->
+            <a href="https://x.com/isrgrajan" target="_blank" class="social-link" title="X (Twitter)">
+                <i class="fa-brands fa-x-twitter"></i>
+            </a>
+            <a href="https://facebook.com/isrgrajan" target="_blank" class="social-link" title="Facebook">
+                <i class="fa-brands fa-facebook"></i>
+            </a>
+            <a href="https://instagram.com/isrgrajan" target="_blank" class="social-link" title="Instagram">
+                <i class="fa-brands fa-instagram"></i>
+            </a>
+        </div>
+        <p class="text-secondary small">
+            &copy; 2026 Ratio Juris. Developed by Isrg Rajan.<br>
+            All forensic snapshot tools provided strictly for legal and auditing purposes.
+        </p>
+    </footer>
+</div>
+
+<!-- Bootstrap JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmxc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        // 1. Fetch and process stats.json
+        fetch('stats.json')
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('ui-version').textContent = data.version;
+                
+                const buildDate = new Date(data.build_date);
+                const eolDate = new Date(data.eol);
+                
+                document.getElementById('ui-build-date').textContent = buildDate.toISOString().replace('T', ' ').substring(0, 19);
+                document.getElementById('ui-eol').textContent = eolDate.toISOString().replace('T', ' ').substring(0, 19);
+
+                const tbody = document.getElementById('downloads-body');
+                data.downloads.forEach(dl => {
+                    const row = document.createElement('tr');
+                    let osIcon = 'fa-desktop';
+                    if (dl.os.toLowerCase().includes('windows')) osIcon = 'fa-windows text-info';
+                    else if (dl.os.toLowerCase().includes('linux')) osIcon = 'fa-linux text-warning';
+                    else if (dl.os.toLowerCase().includes('mac')) osIcon = 'fa-apple text-light';
+
+                    row.innerHTML = `
+                        <td class="fw-bold"><i class="fa-brands ${osIcon} me-2 fs-5"></i>${dl.os}</td>
+                        <td class="font-monospace text-secondary">${dl.arch}</td>
+                        <td class="font-monospace text-accent">${dl.filename}</td>
+                        <td class="text-end">
+                            <a href="${dl.path}" class="btn btn-outline-primary btn-sm px-3 rounded-pill" download>
+                                <i class="fa-solid fa-cloud-arrow-down me-2"></i>Download
+                            </a>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                document.getElementById('loading-stats').style.display = 'none';
+                document.getElementById('downloads-table').style.display = 'table';
+            })
+            .catch(error => {
+                console.error("Failed to load stats.json:", error);
+                document.getElementById('loading-stats').innerHTML = 
+                    `<span class="text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Error loading release data.</span>`;
+            });
+
+        // 2. Fetch and render README.md
+        fetch('README.md')
+            .then(response => {
+                if (!response.ok) throw new Error("README.md not found.");
+                return response.text();
+            })
+            .then(markdown => {
+                document.getElementById('readme-content').innerHTML = marked.parse(markdown);
+                document.getElementById('loading-readme').style.display = 'none';
+                document.getElementById('readme-content').style.display = 'block';
+            })
+            .catch(error => {
+                console.error("Failed to load README.md:", error);
+                document.getElementById('loading-readme').innerHTML = 
+                    `<span class="text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Failed to load README.md.</span>`;
+            });
+    });
+</script>
+
+</body>
+</html>
