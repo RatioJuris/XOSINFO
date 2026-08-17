@@ -1,0 +1,27 @@
+{
+  "version": "1.0.9",
+  "build_date": "2026-08-17T18:04:48Z",
+  "eol": "2027-08-17T18:04:48Z",
+  "downloads": [
+    {
+      "os": "Linux",
+      "arch": "linux_x64",
+      "filename": "xosinfo-linux-x64"
+    },
+    {
+      "os": "Windows",
+      "arch": "win64",
+      "filename": "xosinfo-win64.exe"
+    },
+    {
+      "os": "Windows",
+      "arch": "win32",
+      "filename": "xosinfo-win32.exe"
+    },
+    {
+      "os": "macOS",
+      "arch": "macos_universal",
+      "filename": "xosinfo-macos"
+    }
+  ]
+}
