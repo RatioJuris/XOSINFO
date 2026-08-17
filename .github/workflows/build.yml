@@ -26,10 +26,6 @@ jobs:
             arch: win64
             output_name: xosinfo-win64.exe
             sys-env: mingw64
-          - os: windows-latest
-            arch: win32
-            output_name: xosinfo-win32.exe
-            sys-env: mingw32
           - os: macos-latest
             arch: macos_universal
             output_name: xosinfo-macos
@@ -38,6 +34,9 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+
+    - name: Create Build Directory
+      run: mkdir -p build
 
     - name: Setup MSYS2 Toolchain (Windows)
       if: matrix.os == 'windows-latest'
@@ -48,34 +47,29 @@ jobs:
         install: >-
           git
           make
-          ${{ matrix.arch == 'win32' && 'mingw-w64-i686-gcc' || 'mingw-w64-x86_64-gcc' }}
+          mingw-w64-x86_64-gcc
 
     - name: Compile Source (Windows)
       if: matrix.os == 'windows-latest'
       shell: msys2 {0}
       run: |
-        # In MSYS2 environments, compilers map to specific target prefixes
-        if [ "${{ matrix.arch }}" = "win32" ]; then
-          i686-w64-mingw32-g++ src/main.cpp -o ${{ matrix.output_name }} -O3 -liphlpapi -lws2_32
-        else
-          x86_64-w64-mingw32-g++ src/main.cpp -o ${{ matrix.output_name }} -O3 -liphlpapi -lws2_32
-        fi
+        x86_64-w64-mingw32-g++ main.cpp -o build/${{ matrix.output_name }} -O3 -liphlpapi -lws2_32
 
     - name: Compile Source (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
-        g++ src/main.cpp -o ${{ matrix.output_name }} -O3
+        g++ main.cpp -o build/${{ matrix.output_name }} -O3
 
     - name: Compile Source (macOS)
       if: matrix.os == 'macos-latest'
       run: |
-        clang++ src/main.cpp -o ${{ matrix.output_name }} -O3 -arch x86_64 -arch arm64
+        clang++ main.cpp -o build/${{ matrix.output_name }} -O3 -arch x86_64 -arch arm64
       
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.output_name }}
-        path: ${{ matrix.output_name }}
+        path: build/${{ matrix.output_name }}
 
   generate_stats:
     name: Generate and Push stats.json
@@ -103,22 +97,20 @@ jobs:
               {
                 "os": "Linux",
                 "arch": "linux_x64",
-                "filename": "xosinfo-linux-x64"
+                "filename": "xosinfo-linux-x64",
+                "path": "build/xosinfo-linux-x64"
               },
               {
                 "os": "Windows",
                 "arch": "win64",
-                "filename": "xosinfo-win64.exe"
-              },
-              {
-                "os": "Windows",
-                "arch": "win32",
-                "filename": "xosinfo-win32.exe"
+                "filename": "xosinfo-win64.exe",
+                "path": "build/xosinfo-win64.exe"
               },
               {
                 "os": "macOS",
                 "arch": "macos_universal",
-                "filename": "xosinfo-macos"
+                "filename": "xosinfo-macos",
+                "path": "build/xosinfo-macos"
               }
             ]
           }
@@ -126,7 +118,7 @@ jobs:
 
       - name: Commit and Push stats.json
         run: |
-          git config --global user.name "github-actions[bot]"
+          git config --global user.name "RatioJurisBeeBot"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
           git add stats.json
