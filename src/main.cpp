@@ -4,7 +4,7 @@
  * Website: https://github.io
  * Purpose: Judicial, legal, and forensic system state capture.
  * Language: C++17 or higher
-  * Version: 1.0
+ * Version: 1.0
  */
 
 #include <iostream>
@@ -19,14 +19,18 @@
 #include <memory>
 #include <algorithm>
 #include <cstdint>
+#include <iterator>
 
 #if defined(_WIN32)
     #ifndef WIN32_LEAN_AND_MEAN
         #define WIN32_LEAN_AND_MEAN
     #endif
     #include <windows.h>
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
     #include <iphlpapi.h>
     #pragma comment(lib, "iphlpapi.lib")
+    #pragma comment(lib, "ws2_32.lib")
 #elif defined(__linux__) || defined(__APPLE__)
     #include <sys/utsname.h>
     #include <unistd.h>
@@ -40,6 +44,7 @@
     #include <sys/types.h>
     #include <sys/sysctl.h>
     #include <net/if_dl.h>
+    #include <mach/mach.h>
 #elif defined(__linux__)
     #include <sys/ioctl.h>
     #include <net/if.h>
@@ -140,7 +145,7 @@ namespace Utils {
         json << "    \"name\": \"" << escapeJson(report.os.name) << "\",\n";
         json << "    \"release\": \"" << escapeJson(report.os.release) << "\",\n";
         json << "    \"version\": \"" << escapeJson(report.os.version) << "\",\n";
-        json << "    \"architecture\": \"" << escapeJson(report.os.architecture) << \"\"\n";
+        json << "    \"architecture\": \"" << escapeJson(report.os.architecture) << "\"\n";
         json << "  },\n";
 
         // Memory Section
@@ -264,10 +269,10 @@ public:
         
         vm_size_t pageSize;
         mach_port_t machPort = mach_host_self();
-        mach_msg_type_number_t count = HOST_VM_INFO_COUNT;
+        mach_msg_type_number_t count = HOST_VM_INFO64_COUNT;
         vm_statistics64_data_t vmStats;
         if (host_page_size(machPort, &pageSize) == KERN_SUCCESS &&
-            host_statistics64(machPort, HOST_VM_INFO, reinterpret_cast<host_info64_t>(&vmStats), &count) == KERN_SUCCESS) {
+            host_statistics64(machPort, HOST_VM_INFO64, reinterpret_cast<host_info64_t>(&vmStats), &count) == KERN_SUCCESS) {
             state.freeRamBytes = static_cast<uint64_t>(vmStats.free_count) * pageSize;
         }
 #endif
@@ -381,7 +386,7 @@ public:
                     NetworkInterface n;
                     n.name = ifa->ifa_name;
                     list.push_back(n);
-                    it = std::prior(list.end());
+                    it = std::prev(list.end());
                 }
 
                 char host[INET6_ADDRSTRLEN] = {0};
@@ -391,7 +396,7 @@ public:
                         it->ipv4 = host;
                     }
                 } else if (ifa->ifa_addr->sa_family == AF_INET6) {
-                    auto addr = &(reinterpret_cast<struct sockaddr_in6*>(ifa->ifa_addr)->sin_6addr);
+                    auto addr = &(reinterpret_cast<struct sockaddr_in6*>(ifa->ifa_addr)->sin6_addr);
                     if (inet_ntop(AF_INET6, addr, host, sizeof(host))) {
                         it->ipv6 = host;
                     }
