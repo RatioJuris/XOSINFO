@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [ "main" ]
 
-# Explicitly grant read and write permissions to the GITHUB_TOKEN
 permissions:
   contents: write
 
@@ -15,6 +14,8 @@ jobs:
     name: Build for ${{ matrix.os }} (${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
     strategy:
+      # Prevents GitHub from cancelling all jobs if one fails
+      fail-fast: false 
       matrix:
         include:
           - os: ubuntu-latest
@@ -27,6 +28,8 @@ jobs:
             output_name: xosinfo-win64.exe
             compiler: g++
             flags: "-O3 -liphlpapi"
+          # Note: Standard GitHub windows-latest runners may not have 32-bit C++ headers installed by default. 
+          # If this win32 job fails, you can safely remove it from the matrix.
           - os: windows-latest
             arch: win32
             output_name: xosinfo-win32.exe
@@ -36,7 +39,8 @@ jobs:
             arch: macos_universal
             output_name: xosinfo-macos
             compiler: clang++
-            flags: "-O3"
+            # Compiles a Fat Binary containing both Intel (x86_64) and Apple Silicon (arm64) instructions
+            flags: "-O3 -arch x86_64 -arch arm64"
 
     steps:
     - name: Checkout repository
@@ -44,7 +48,8 @@ jobs:
 
     - name: Compile Source
       run: |
-        ${{ matrix.compiler }} ${{ matrix.flags }} src/main.cpp -o ${{ matrix.output_name }}
+        # Fixed argument order: flags must come AFTER the source file for the linker
+        ${{ matrix.compiler }} src/main.cpp -o ${{ matrix.output_name }} ${{ matrix.flags }}
       
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
@@ -56,23 +61,19 @@ jobs:
     name: Generate and Push stats.json
     needs: build
     runs-on: ubuntu-latest
-    # Only run the push step if it's on the main branch (prevents pushing during PRs)
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # Required to fetch the full history so we can push back
           fetch-depth: 0 
 
       - name: Create JSON
         run: |
-          # Generate timestamps and version
           BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           EOL_DATE=$(date -u -d "+1 year" +"%Y-%m-%dT%H:%M:%SZ")
           VERSION="1.0.${{ github.run_number }}"
           
-          # Write the JSON array for the homepage to parse
           cat <<EOF > stats.json
           {
             "version": "$VERSION",
@@ -105,17 +106,14 @@ jobs:
 
       - name: Commit and Push stats.json
         run: |
-          # Configure git as the GitHub Actions bot
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          # Add, commit, and push the stats.json file
           git add stats.json
-          # [skip ci] prevents this commit from triggering another build loop
           git commit -m "chore: update stats.json for homepage [skip ci]" || echo "No changes to commit"
           git push origin main
 
-      - name: Upload stats.json as artifact (Backup)
+      - name: Upload stats.json as artifact
         uses: actions/upload-artifact@v4
         with:
           name: stats.json
