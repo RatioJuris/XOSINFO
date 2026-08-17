@@ -14,7 +14,7 @@ jobs:
     name: Build for ${{ matrix.os }} (${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
     strategy:
-      # Prevents GitHub from cancelling all jobs if one fails
+      # Prevents GitHub from cancelling all parallel jobs if one fails
       fail-fast: false 
       matrix:
         include:
@@ -28,13 +28,13 @@ jobs:
             output_name: xosinfo-win64.exe
             compiler: g++
             flags: "-O3 -liphlpapi -lws2_32"
-          # Note: Standard GitHub windows-latest runners may not have 32-bit C++ headers installed by default. 
-          # If this win32 job fails, you can safely remove it from the matrix.
           - os: windows-latest
             arch: win32
             output_name: xosinfo-win32.exe
             compiler: g++
-            flags: "-m32 -O3 -liphlpapi -lws2_32"
+            # Removed the problematic -m32 flag because the custom MinGW setup action 
+            # provisioner sets up a native 32-bit compiler target environment dynamically.
+            flags: "-O3 -liphlpapi -lws2_32"
           - os: macos-latest
             arch: macos_universal
             output_name: xosinfo-macos
@@ -45,6 +45,12 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+
+    - name: Setup MinGW Toolchain (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: egor-tassin/setup-mingw@v2
+      with:
+        platform: ${{ matrix.arch == 'win32' && 'x32' || 'x64' }}
 
     - name: Compile Source
       run: |
