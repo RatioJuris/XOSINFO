@@ -10,6 +10,7 @@
  *   Linux (g++):         g++ src/main.cpp -o build/xosinfo-linux-x64 -O3
  *   macOS (clang++):     clang++ src/main.cpp -o build/xosinfo-macos -O3 -arch x86_64 -arch arm64
  */
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -139,8 +140,8 @@ namespace Utils {
         json << "{\n";
         json << "  \"metadata\": {\n";
         json << "    \"tool\": \"XOSINFO\",\n";
-        json << "    \"version\": \"1.0\",\n";
-        json << "    \"purpose\": \"Judicial, legal, and forensic system state capture.\"\n";
+        json << "    \"version\": \"" << escapeJson(XOSINFO_VERSION) << "\",\n";
+        json << "    \"purpose\": \"" << escapeJson(XOSINFO_PURPOSE) << "\"\n";
         json << "  },\n";
         json << "  \"timestamp\": \"" << escapeJson(report.timestamp) << "\",\n";
         json << "  \"hostname\": \"" << escapeJson(report.hostname) << "\",\n";
@@ -229,6 +230,7 @@ public:
             info.release = "NT";
             info.version = "Unknown Version";
             info.architecture = "Unknown Arch";
+
             SYSTEM_INFO sysInfo;
             GetNativeSystemInfo(&sysInfo);
             if (sysInfo.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64) {
@@ -236,6 +238,7 @@ public:
             } else if (sysInfo.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_ARM64) {
                 info.architecture = "arm64";
             }
+
             HKEY hKey;
             if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
                 char prodName[256] = {0};
@@ -489,9 +492,61 @@ public:
     }
 };
 
+void printHelp() {
+    std::cout << "========================================================\n"
+              << " XOSINFO - Cross-Platform System Information CLI\n"
+              << " Version: " << XOSINFO_VERSION << "\n"
+              << " Purpose: " << XOSINFO_PURPOSE << "\n"
+              << "========================================================\n\n"
+              << "USAGE:\n"
+              << "  xosinfo [options]\n\n"
+              << "OPTIONS:\n"
+              << "  -h, --help               Show this help message and exit.\n"
+              << "  -p, --print              Print the forensic JSON directly to standard output (stdout).\n"
+              << "  -o, --output <file>      Write the forensic JSON output to the specified file.\n\n"
+              << "EXAMPLES:\n"
+              << "  xosinfo --print            (Prints JSON directly to console for piping)\n"
+              << "  xosinfo -o snapshot.json   (Saves JSON to snapshot.json)\n"
+              << "  xosinfo --print -o s.json  (Prints to console AND saves to file)\n"
+              << "========================================================\n";
+}
+
 int main(int argc, char* argv[]) {
     std::ios_base::sync_with_stdio(false);
     std::cin.tie(nullptr);
+
+    if (argc == 1) {
+        printHelp();
+#if defined(_WIN32)
+        std::cout << "\n[Notice] You have executed the program directly without arguments.\n";
+        std::cout << "Press Enter to exit the console...";
+        std::cin.clear();
+        std::cin.get();
+#endif
+        return 0;
+    }
+
+    std::string targetFile = "";
+    bool printToStdout = false;
+
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        
+        if (arg == "-h" || arg == "--help") {
+            printHelp();
+            return 0;
+        } else if (arg == "-p" || arg == "--print") {
+            printToStdout = true;
+        } else if ((arg == "-o" || arg == "--output") && i + 1 < argc) {
+            targetFile = argv[++i];
+        } else if (targetFile.empty() && arg[0] != '-') {
+            targetFile = arg;
+        } else {
+            std::cerr << "[ERROR] Unknown or incomplete argument: " << arg << "\n"
+                      << "Type 'xosinfo --help' for usage information.\n";
+            return 1;
+        }
+    }
 
     ForensicReport report;
     report.timestamp = Utils::getCurrentTimestamp();
@@ -502,15 +557,18 @@ int main(int argc, char* argv[]) {
     report.network = SystemDiscovery::getNetworkInterfaces();
 
     std::string output = Utils::serializeReport(report);
-    std::cout << output;
+    
+    if (printToStdout) {
+        std::cout << output << "\n";
+    }
 
-    if (argc > 1) {
+    if (!targetFile.empty()) {
         try {
-            std::string targetFile = argv[1];
             std::ofstream out(targetFile, std::ios::out | std::ios::trunc);
             if (out.is_open()) {
                 out << output;
                 out.close();
+                std::cerr << "\n[SUCCESS] Forensic report securely written to: " << targetFile << "\n";
             } else {
                 std::cerr << "\n[ERROR] Failed to securely write report to target location: " << targetFile << "\n";
                 return 1;
