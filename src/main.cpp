@@ -6,9 +6,9 @@
  * Language: C++17 or higher
  *
  * Compilation Instructions:
- *   Windows (MinGW g++): g++ src/main.cpp -o xosinfo-win64.exe -O3 -liphlpapi -lws2_32
- *   Linux (g++):         g++ src/main.cpp -o xosinfo-linux-x64 -O3
- *   macOS (clang++):     clang++ src/main.cpp -o xosinfo-macos -O3 -arch x86_64 -arch arm64
+ *   Windows (MinGW g++): g++ src/main.cpp -o build/xosinfo-win64.exe -O3 -liphlpapi -lws2_32
+ *   Linux (g++):         g++ src/main.cpp -o build/xosinfo-linux-x64 -O3
+ *   macOS (clang++):     clang++ src/main.cpp -o build/xosinfo-macos -O3 -arch x86_64 -arch arm64
  */
 
 #include <iostream>
@@ -148,8 +148,8 @@ namespace Utils {
         json << "{\n";
         json << "  \"metadata\": {\n";
         json << "    \"tool\": \"XOSINFO\",\n";
-        json << "    \"version\": \"" << escapeJson(XOSINFO_VERSION) << "\",\n";
-        json << "    \"purpose\": \"" << escapeJson(XOSINFO_PURPOSE) << \"\"\n";
+        json << "    \"version\": \" " << escapeJson(XOSINFO_VERSION) << "\",\n";
+        json << "    \"purpose\": \" " << escapeJson(XOSINFO_PURPOSE) << "\"\n";
         json << "  },\n";
         json << "  \"timestamp\": \"" << escapeJson(report.timestamp) << "\",\n";
         json << "  \"hostname\": \"" << escapeJson(report.hostname) << "\",\n";
@@ -157,12 +157,12 @@ namespace Utils {
         // OS Section
         json << "  \"os\": {\n";
         if (!report.os.error.empty()) {
-            json << "    \"error\": \" " << escapeJson(report.os.error) << "\"\n";
+            json << "    \"error\": \"" << escapeJson(report.os.error) << "\"\n";
         } else {
             json << "    \"name\": \"" << escapeJson(report.os.name) << "\",\n";
             json << "    \"release\": \"" << escapeJson(report.os.release) << "\",\n";
             json << "    \"version\": \"" << escapeJson(report.os.version) << "\",\n";
-            json << "    \"architecture\": \"" << escapeJson(report.os.architecture) << \"\"\n";
+            json << "    \"architecture\": \"" << escapeJson(report.os.architecture) << "\"\n";
         }
         json << "  },\n";
 
@@ -183,7 +183,7 @@ namespace Utils {
             json << "    {\n";
             if (!vol.error.empty()) {
                 json << "      \"path\": \"" << escapeJson(vol.path) << "\",\n";
-                json << "      \"error\": \"" << escapeJson(vol.error) << \"\"\n";
+                json << "      \"error\": \"" << escapeJson(vol.error) << "\"\n";
             } else {
                 json << "      \"path\": \"" << escapeJson(vol.path) << "\",\n";
                 json << "      \"total_bytes\": " << vol.totalBytes << ",\n";
@@ -201,12 +201,12 @@ namespace Utils {
             json << "    {\n";
             if (!net.error.empty()) {
                 json << "      \"interface\": \"" << escapeJson(net.name) << "\",\n";
-                json << "      \"error\": \"" << escapeJson(net.error) << \"\"\n";
+                json << "      \"error\": \"" << escapeJson(net.error) << "\"\n";
             } else {
                 json << "      \"interface\": \"" << escapeJson(net.name) << "\",\n";
                 json << "      \"ipv4\": \"" << escapeJson(net.ipv4) << "\",\n";
                 json << "      \"ipv6\": \"" << escapeJson(net.ipv6) << "\",\n";
-                json << "      \"mac_address\": \"" << escapeJson(net.mac) << \"\"\n";
+                json << "      \"mac_address\": \"" << escapeJson(net.mac) << "\"\n";
             }
             json << "    }" << (i + 1 < report.network.size() ? "," : "") << "\n";
         }
@@ -545,7 +545,6 @@ int main(int argc, char* argv[]) {
 
     ForensicReport report;
     
-    // Exception-isolated orchestration layer
     try { report.timestamp = Utils::getCurrentTimestamp(); } 
     catch (...) { report.globalErrors.push_back("Critical failure resolving clock timestamp telemetry"); }
     
