@@ -1,192 +1,7 @@
 /*
  * XOSINFO - Cross-Platform System Information CLI
  * Author: Ratio Juris
- * Website: https://github.io
- * Purpose: Judicial, legal, and forensic system state capture.
- * Language: C++17 or higher
- *
- * Compilation Instructions:
- *   Windows (MinGW g++): g++ src/main.cpp -o xosinfo-win64.exe -O3 -liphlpapi -lws2_32
- *   Linux (g++):         g++ src/main.cpp -o xosinfo-linux-x64 -O3
- *   macOS (clang++):     clang++ src/main.cpp -o xosinfo-macos -O3 -arch x86_64 -arch arm64
- */
-
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <vector>
-#include <chrono>
-#include <ctime>
-#include <sstream>
-#include <iomanip>
-#include <cstring>
-#include <memory>
-#include <algorithm>
-#include <cstdint>
-#include <iterator>
-
-#if defined(_WIN32)
-    #ifndef WIN32_LEAN_AND_MEAN
-        #define WIN32_LEAN_AND_MEAN
-    #endif
-    #include <windows.h>
-    #include <winsock2.h>
-    #include <ws2tcpip.h>
-    #include <iphlpapi.h>
-    #pragma comment(lib, "iphlpapi.lib")
-    #pragma comment(lib, "ws2_32.lib")
-#elif defined(__linux__) || defined(__APPLE__)
-    #include <sys/utsname.h>
-    #include <unistd.h>
-    #include <ifaddrs.h>
-    #include <netinet/in.h>
-    #include <arpa/inet.h>
-    #include <sys/statvfs.h>
-#endif
-
-#if defined(__APPLE__)
-    #include <sys/types.h>
-    #include <sys/sysctl.h>
-    #include <net/if_dl.h>
-    #include <mach/mach.h>
-#elif defined(__linux__)
-    #include <sys/ioctl.h>
-    #include <net/if.h>
-    #include <sys/sysinfo.h>
-#endif
-
-// Global Metadata Constants
-constexpr const char* XOSINFO_VERSION = "1.0";
-constexpr const char* XOSINFO_PURPOSE = "Judicial, legal, and forensic system state capture.";
-
-// Structured models for predictable serialization
-struct NetworkInterface {
-    std::string name;
-    std::string ipv4;
-    std::string ipv6;
-    std::string mac;
-};
-
-struct StorageVolume {
-    std::string path;
-    uint64_t totalBytes = 0;
-    uint64_t freeBytes = 0;
-    uint64_t availableBytes = 0;
-};
-
-struct MemoryState {
-    uint64_t totalRamBytes = 0;
-    uint64_t freeRamBytes = 0;
-};
-
-struct OperatingSystemInfo {
-    std::string name;
-    std::string release;
-    std::string version;
-    std::string architecture;
-};
-
-struct ForensicReport {
-    std::string timestamp;
-    std::string hostname;
-    OperatingSystemInfo os;
-    MemoryState memory;
-    std::vector<StorageVolume> storage;
-    std::vector<NetworkInterface> network;
-};
-
-// Utilities Namespace for safe transformations and JSON building
-namespace Utils {
-    std::string escapeJson(const std::string& s) {
-        std::ostringstream o;
-        for (char c : s) {
-            switch (c) {
-                case '"':  o << "\\\""; break;
-                case '\\': o << "\\\\"; break;
-                case '\b': o << "\\b";  break;
-                case '\f': o << "\\f";  break;
-                case '\n': o << "\\n";  break;
-                case '\r': o << "\\r";  break;
-                case '\t': o << "\\t";  break;
-                default:
-                    if (static_cast<unsigned char>(c) < 32) {
-                        o << "\\u" << std::hex << std::setw(4) << std::setfill('0') << static_cast<int>(c);
-                    } else {
-                        o << c;
-                    }
-            }
-        }
-        return o.str();
-    }
-
-    std::string getCurrentTimestamp() {
-        auto now = std::chrono::system_clock::now();
-        std::time_t now_c = std::chrono::system_clock::to_time_t(now);
-        std::stringstream ss;
-        struct tm timeinfo;
-#if defined(_WIN32)
-        if (gmtime_s(&timeinfo, &now_c) != 0) return "UNKNOWN_TIME";
-#else
-        if (gmtime_r(&now_c, &timeinfo) == nullptr) return "UNKNOWN_TIME";
-#endif
-        ss << std::put_time(&timeinfo, "%Y-%m-%dT%H:%M:%SZ");
-        return ss.str();
-    }
-
-    std::string serializeReport(const ForensicReport& report) {
-        std::ostringstream json;
-        json << "{\n";
-        json << "  \"metadata\": {\n";
-        json << "    \"tool\": \"XOSINFO\",\n";
-        json << "    \"version\": \"" << escapeJson(XOSINFO_VERSION) << "\",\n";
-        json << "    \"purpose\": \"" << escapeJson(XOSINFO_PURPOSE) << "\"\n";
-        json << "  },\n";
-        json << "  \"timestamp\": \"" << escapeJson(report.timestamp) << "\",\n";
-        json << "  \"hostname\": \"" << escapeJson(report.hostname) << "\",\n";
-        
-        // OS Section
-        json << "  \"os\": {\n";
-        json << "    \"name\": \"" << escapeJson(report.os.name) << "\",\n";
-        json << "    \"release\": \"" << escapeJson(report.os.release) << "\",\n";
-        json << "    \"version\": \"" << escapeJson(report.os.version) << "\",\n";
-        json << "    \"architecture\": \"" << escapeJson(report.os.architecture) << \"\"\n";
-        json << "  },\n";
-
-        // Memory Section
-        json << "  \"memory\": {\n";
-        json << "    \"total_ram_bytes\": " << report.memory.totalRamBytes << ",\n";
-        json << "    \"free_ram_bytes\": " << report.memory.freeRamBytes << "\n";
-        json << "  },\n";
-
-        // Storage Section
-        json << "  \"storage\": [\n";
-        for (size_t i = 0; i < report.storage.size(); ++i) {
-            const auto& vol = report.storage[i];
-            json << "    {\n";
-            json << "      \"path\": \"" << escapeJson(vol.path) << "\",\n";
-            json << "      \"total_bytes\": " << vol.totalBytes << ",\n";
-            json << "      \"free_bytes\": " << vol.freeBytes << ",\n";
-            json << "      \"available_bytes\": " << vol.availableBytes << "\n";
-            json << "    }" << (i + 1 < report.storage.size() ? "," : "") << "\n";
-        }
-        json << "  ],\n";
-
-        // Network Section
-        json << "  \"network\": [\n";
-        for (size_t i = 0; i < report.network.size(); ++i) {
-            const auto& net = report.network[i];
-            json << "    {\n";
-            json << "      \"interface\": \"" << escapeJson(net.name) << "\",\n";
-            json << "      \"ipv4\": \"" << escapeJson(net.ipv4) << "\",\n";
-            json << "      \"ipv6\": \"" << escapeJson(net.ipv6) << "\",\n";
-            header << "      \"mac_address\": \"" << escapeJson(net.mac) << "\"\n"; // Fixed reference to output stream or json string
-            // Wait, let's fix a small typo here from previous stream copy if any: it should be json, not header!
-        }
-        // Let's rewrite the loop precisely to ensure there are no compilation errors.
-/*
- * XOSINFO - Cross-Platform System Information CLI
- * Author: Ratio Juris
- * Website: https://github.io
+ * Website: https://ratiojuris.github.io/XOSINFO/
  * Purpose: Judicial, legal, and forensic system state capture.
  * Language: C++17 or higher
  *
@@ -493,7 +308,6 @@ public:
         // Fallback root target discovery for standard systems
         std::vector<std::string> searchPaths = {"/"};
 #if defined(__linux__)
-        // Add optional check paths if specific mounts are targeted
         searchPaths.push_back("/home");
 #endif
         for (const auto& path : searchPaths) {
@@ -529,7 +343,7 @@ public:
         if (dwRetVal == NO_ERROR) {
             for (PIP_ADAPTER_ADDRESSES curr = adapters; curr != nullptr; curr = curr->Next) {
                 NetworkInterface net;
-                net.name = curr->AdapterName; // Holds UUID format on Windows
+                net.name = curr->AdapterName;
                 
                 // Get MAC address
                 if (curr->PhysicalAddressLength > 0) {
@@ -561,12 +375,10 @@ public:
         }
 #else
         struct ifaddrs* interfaces = nullptr;
-        // Exception safe wrapper pattern for getifaddrs
         if (getifaddrs(&interfaces) == 0) {
             for (struct ifaddrs* ifa = interfaces; ifa != nullptr; ifa = ifa->ifa_next) {
                 if (!ifa->ifa_addr) continue;
 
-                // Find existing interface tracking item or register a new one
                 auto it = std::find_if(list.begin(), list.end(), [&](const NetworkInterface& item) {
                     return item.name == ifa->ifa_name;
                 });
@@ -575,7 +387,7 @@ public:
                     NetworkInterface n;
                     n.name = ifa->ifa_name;
                     list.push_back(n);
-                    it = std::prev(list.end());
+                    it = list.end() - 1;
                 }
 
                 char host[INET6_ADDRSTRLEN] = {0};
@@ -604,14 +416,12 @@ public:
                     }
                 }
 #elif defined(__linux__)
-                // Linux socket interface resolution for physical address mapping
-                int sock = socket(AF_INET, SOCK_DGRAM, 0);
-                if (sock >= 0) {
-                    struct ifreq ifr;
-                    std::size_t name_len = std::strlen(ifa->ifa_name);
-                    if (name_len < sizeof(ifr.ifr_name)) {
+                if (it->mac.empty()) {
+                    int sock = socket(AF_INET, SOCK_DGRAM, 0);
+                    if (sock >= 0) {
+                        struct ifreq ifr;
+                        std::memset(&ifr, 0, sizeof(ifr));
                         std::strncpy(ifr.ifr_name, ifa->ifa_name, sizeof(ifr.ifr_name) - 1);
-                        ifr.ifr_name[sizeof(ifr.ifr_name) - 1] = '\0';
                         if (ioctl(sock, SIOCGIFHWADDR, &ifr) == 0) {
                             std::ostringstream macStr;
                             unsigned char* ptr = reinterpret_cast<unsigned char*>(ifr.ifr_hwaddr.sa_data);
@@ -621,8 +431,8 @@ public:
                             }
                             it->mac = macStr.str();
                         }
+                        close(sock);
                     }
-                    close(sock);
                 }
 #endif
             }
