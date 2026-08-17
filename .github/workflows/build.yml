@@ -48,6 +48,7 @@ jobs:
           mingw-w64-x86_64-gcc
 
     - name: Create Build Directory (All Platforms)
+      shell: bash
       run: mkdir -p build
 
     - name: Compile Source (Windows)
