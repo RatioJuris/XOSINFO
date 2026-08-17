@@ -14,7 +14,6 @@ jobs:
     name: Build for ${{ matrix.os }} (${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
     strategy:
-      # Prevents GitHub from cancelling all parallel jobs if one fails
       fail-fast: false 
       matrix:
         include:
@@ -35,9 +34,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Create Build Directory
-      run: mkdir -p build
-
     - name: Setup MSYS2 Toolchain (Windows)
       if: matrix.os == 'windows-latest'
       uses: msys2/setup-msys2@v2
@@ -48,6 +44,9 @@ jobs:
           git
           make
           mingw-w64-x86_64-gcc
+
+    - name: Create Build Directory (All Platforms)
+      run: mkdir -p build
 
     - name: Compile Source (Windows)
       if: matrix.os == 'windows-latest'
