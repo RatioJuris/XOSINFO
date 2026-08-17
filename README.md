@@ -12,6 +12,32 @@ XOSINFO is an enterprise-grade, high-performance cross-platform Command Line Int
 
 ---
 
+## 🕹️Usage 
+
+```
+========================================================
+ XOSINFO - Cross-Platform System Information CLI
+ Version: 1.0
+ Purpose: Judicial, legal, and forensic system state capture.
+========================================================
+
+USAGE:
+  xosinfo [options]
+
+OPTIONS:
+  -h, --help               Show this help message and exit.
+  -p, --print              Print the forensic JSON directly to standard output (stdout).
+  -o, --output <file>      Write the forensic JSON output to the specified file.
+
+EXAMPLES:
+  xosinfo --print            (Prints JSON directly to console for piping)
+  xosinfo -o snapshot.json   (Saves JSON to snapshot.json)
+  xosinfo --print -o s.json  (Prints to console AND saves to file)
+========================================================
+```
+
+---
+
 ## 🛡️ Key Core Capabilities
 
 *   **Defensive Error Resilience:** Built defensively using clean try-catch structures down to the platform API layer. Intermittent query faults or unprivileged infrastructure states fail gracefully, storing targeted platform errors in the JSON schema without interrupting execution.
