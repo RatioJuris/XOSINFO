@@ -21,41 +21,55 @@ jobs:
           - os: ubuntu-latest
             arch: linux_x64
             output_name: xosinfo-linux-x64
-            compiler: g++
-            flags: "-O3"
+            sys-env: posix
           - os: windows-latest
             arch: win64
             output_name: xosinfo-win64.exe
-            compiler: g++
-            flags: "-O3 -liphlpapi -lws2_32"
+            sys-env: mingw64
           - os: windows-latest
             arch: win32
             output_name: xosinfo-win32.exe
-            compiler: g++
-            # Removed the problematic -m32 flag because the custom MinGW setup action 
-            # provisioner sets up a native 32-bit compiler target environment dynamically.
-            flags: "-O3 -liphlpapi -lws2_32"
+            sys-env: mingw32
           - os: macos-latest
             arch: macos_universal
             output_name: xosinfo-macos
-            compiler: clang++
-            # Compiles a Fat Binary containing both Intel (x86_64) and Apple Silicon (arm64) instructions
-            flags: "-O3 -arch x86_64 -arch arm64"
+            sys-env: posix
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Setup MinGW Toolchain (Windows)
+    - name: Setup MSYS2 Toolchain (Windows)
       if: matrix.os == 'windows-latest'
-      uses: egor-tassin/setup-mingw@v2
+      uses: msys2/setup-msys2@v2
       with:
-        platform: ${{ matrix.arch == 'win32' && 'x32' || 'x64' }}
+        msystem: ${{ matrix.sys-env }}
+        update: true
+        install: >-
+          git
+          make
+          ${{ matrix.arch == 'win32' && 'mingw-w64-i686-gcc' || 'mingw-w64-x86_64-gcc' }}
 
-    - name: Compile Source
+    - name: Compile Source (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: msys2 {0}
       run: |
-        # Fixed argument order: flags must come AFTER the source file for the linker
-        ${{ matrix.compiler }} src/main.cpp -o ${{ matrix.output_name }} ${{ matrix.flags }}
+        # In MSYS2 environments, compilers map to specific target prefixes
+        if [ "${{ matrix.arch }}" = "win32" ]; then
+          i686-w64-mingw32-g++ src/main.cpp -o ${{ matrix.output_name }} -O3 -liphlpapi -lws2_32
+        else
+          x86_64-w64-mingw32-g++ src/main.cpp -o ${{ matrix.output_name }} -O3 -liphlpapi -lws2_32
+        fi
+
+    - name: Compile Source (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        g++ src/main.cpp -o ${{ matrix.output_name }} -O3
+
+    - name: Compile Source (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        clang++ src/main.cpp -o ${{ matrix.output_name }} -O3 -arch x86_64 -arch arm64
       
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
