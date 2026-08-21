@@ -133,9 +133,12 @@ std::string makeXMLTagName(std::string str) {
         if (std::isalnum(c)) return (char)std::tolower(c);
         return '_';
     });
-    if (str.empty() || std::isdigit(str)) {
+    
+    // Check if the string is empty OR if the first character is a number
+    if (str.empty() || std::isdigit(static_cast<unsigned char>(str[0]))) {
         str = "property_" + str;
     }
+    
     return str;
 }
 
